@@ -15,6 +15,7 @@ const db = mysql.createPool({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
+  ssl: process.env.DB_SSL === 'true' ? { minVersion: 'TLSv1.2', rejectUnauthorized: true } : undefined,
   dateStrings: ['DATE']
 });
 
@@ -1108,7 +1109,6 @@ app.post('/api/admin/closures/:id/approve', authRequired, requireRole('ADMIN'), 
 
 app.post('/api/admin/closures/:id/reject', authRequired, requireRole('ADMIN'), (req, res) =>
   decideClosure(req, res, 'REJECTED', 'CLOSURE_REJECTED'));
-
 
 app.listen(process.env.PORT || 3000, () => {
   console.log('Server running on http://localhost:' + (process.env.PORT || 3000));

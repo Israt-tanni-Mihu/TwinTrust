@@ -1,0 +1,5 @@
+node_modules
+.env
+*.sql
+officer_codes_PRIVATE.txt
+import-to-tidb.js
