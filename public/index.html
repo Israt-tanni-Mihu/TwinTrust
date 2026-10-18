@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>জমি যাচাই</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f2f6f3; margin: 0; color: #1d2b22; }
+  header { background: #0b6b3a; color: #fff; padding: 18px; text-align: center; font-size: 22px; }
+  main { max-width: 640px; margin: 20px auto; padding: 0 14px; }
+  .box { background: #fff; border-radius: 10px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+  .hint { font-size: 14px; color: #556; margin: 0 0 6px; }
+  label { display: block; margin: 12px 0 4px; font-weight: bold; }
+  input, select { width: 100%; padding: 10px; font-size: 16px; border: 1px solid #aab; border-radius: 6px; box-sizing: border-box; background: #fff; }
+  button { margin-top: 16px; width: 100%; padding: 12px; font-size: 17px; background: #0b6b3a; color: #fff; border: 0; border-radius: 6px; cursor: pointer; }
+  .row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid #eee; }
+  .row span:first-child { color: #556; }
+  .risk { background: #fff4e5; border-left: 4px solid #e08a00; padding: 8px 10px; margin-top: 8px; border-radius: 4px; }
+  .ok { background: #e8f6ec; border-left: 4px solid #0b6b3a; padding: 8px 10px; margin-top: 8px; border-radius: 4px; }
+  .err { color: #b00020; }
+  a { color: #0b6b3a; }
+  .topbar { max-width: 640px; margin: 12px auto 0; padding: 0 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 15px; }
+  .topbar button { width: auto; margin: 0; padding: 6px 12px; font-size: 15px; }
+  .tabs { max-width: 640px; margin: 12px auto 0; padding: 0 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .tabs a { flex: 1 1 130px; text-align: center; padding: 10px 6px; border-radius: 6px; background: #dfe9e2; color: #0b6b3a; text-decoration: none; font-size: 15px; }
+  .tabs a.active { background: #0b6b3a; color: #fff; }
+  footer { max-width: 640px; margin: 0 auto 24px; padding: 0 14px; text-align: center; font-size: 14px; color: #556; }
+</style>
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<header>জমি যাচাই</header>
+<div id="topbar" class="topbar"></div>
+<div id="tabs" class="tabs"></div>
+<main>
+  <div class="box">
+    <p class="hint">জমি ঠিকমতো চেনার জন্য নিচের চারটা তথ্যই দিতে হবে।</p>
+
+    <label for="mouza">১. মৌজা</label>
+    <select id="mouza"><option value="">লোড হচ্ছে...</option></select>
+
+    <label for="survey">২. জরিপের ধরন</label>
+    <select id="survey">
+      <option value="">জরিপ বেছে নিন</option>
+      <option value="CS">CS (ক্যাডাস্ট্রাল জরিপ)</option>
+      <option value="SA">SA (রাষ্ট্রীয় অধিগ্রহণ ও প্রজাস্বত্ব জরিপ)</option>
+      <option value="RS">RS (সংশোধনী জরিপ)</option>
+      <option value="BS">BS (বাংলাদেশ জরিপ)</option>
+    </select>
+
+    <label for="dag">৩. দাগ নম্বর (যেমন D-101)</label>
+    <input id="dag" placeholder="দাগ নম্বর লিখুন">
+
+    <label for="khatian">৪. খতিয়ান নম্বর (যেমন K-201)</label>
+    <input id="khatian" placeholder="খতিয়ান নম্বর লিখুন">
+
+    <button id="searchBtn">খুঁজুন</button>
+  </div>
+  <div id="result"></div>
+</main>
+<script>
+const riskNames = {
+  KHAS: 'খাস জমি',
+  ACQUISITION: 'সরকারি অধিগ্রহণ',
+  CASE: 'মামলা',
+  ADVANCE: 'বায়না (অগ্রিম টাকা)',
+  MORTGAGE: 'বন্ধক'
+};
+const landClassNames = {
+  Agricultural: 'কৃষি জমি', Homestead: 'বসতভিটা', Pond: 'পুকুর',
+  Orchard: 'বাগান', Fallow: 'পতিত জমি', Commercial: 'বাণিজ্যিক জমি'
+};
+const unitNames = { Decimal: 'শতাংশ', Katha: 'কাঠা', Bigha: 'বিঘা', Acre: 'একর' };
+const statusNames = { ACTIVE: 'চলমান', CLOSED: 'নিষ্পত্তি' };
+const caseTypeNames = {
+  LAND_DISPUTE: 'জমি সংক্রান্ত বিরোধ', CRIMINAL: 'ফৌজদারি',
+  CIVIL: 'দেওয়ানি', FRAUD: 'জালিয়াতি', OTHER: 'অন্যান্য'
+};
+const oldDescriptions = {
+  'Government khas land record found': 'সরকারি খাস জমির রেকর্ড পাওয়া গেছে',
+  'Land acquisition notice issued': 'জমি অধিগ্রহণের নোটিশ জারি হয়েছে',
+  'Court case pending on this land': 'এই জমির উপর আদালতে মামলা বিচারাধীন',
+  'Advance payment (bayna) given to owner': 'মালিককে বায়না (অগ্রিম টাকা) দেওয়া হয়েছে',
+  'Land mortgaged to bank/lender': 'জমি ব্যাংক বা ঋণদাতার কাছে বন্ধক আছে'
+};
+
+function describeRisk(text) {
+  const t = text || '';
+  if (t.startsWith('Case type: ')) {
+    const parts = t.split(' | ');
+    const type = parts[0].replace('Case type: ', '');
+    const court = (parts[1] || '').replace('Court: ', '');
+    const details = parts.slice(2).join(' | ');
+    return 'মামলার ধরন: ' + (caseTypeNames[type] || type) +
+           ' | আদালত/থানা: ' + court + ' | ' + details;
+  }
+  return oldDescriptions[t] || t;
+}
+
+function show(msg, isError) {
+  const out = document.getElementById('result');
+  out.textContent = '';
+  const p = document.createElement('p');
+  if (isError) p.className = 'err';
+  p.textContent = msg;
+  out.appendChild(p);
+}
+
+function addRow(parent, label, value) {
+  const row = document.createElement('div');
+  row.className = 'row';
+  const a = document.createElement('span'); a.textContent = label;
+  const b = document.createElement('span'); b.textContent = value || '-';
+  row.append(a, b);
+  parent.appendChild(row);
+}
+
+async function loadMouzas() {
+  const sel = document.getElementById('mouza');
+  try {
+    const res = await fetch('/api/mouzas');
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    sel.textContent = '';
+    const first = document.createElement('option');
+    first.value = ''; first.textContent = 'মৌজা বেছে নিন';
+    sel.appendChild(first);
+    data.mouzas.forEach(m => {
+      const o = document.createElement('option');
+      o.value = m.mouza_id;
+      o.textContent = m.mouza_name + ' (' + m.upazila + ', ' + m.district + ' | জেএল ' + m.jl_number + ')';
+      sel.appendChild(o);
+    });
+  } catch (e) {
+    sel.textContent = '';
+    const o = document.createElement('option');
+    o.value = ''; o.textContent = 'মৌজার তালিকা আনা যায়নি';
+    sel.appendChild(o);
+  }
+}
+
+document.getElementById('searchBtn').addEventListener('click', async () => {
+  const mouza_id = document.getElementById('mouza').value;
+  const survey_type = document.getElementById('survey').value;
+  const dag = document.getElementById('dag').value.trim();
+  const khatian = document.getElementById('khatian').value.trim();
+  const out = document.getElementById('result');
+
+  if (!mouza_id || !survey_type || !dag || !khatian) {
+    show('মৌজা, জরিপের ধরন, দাগ নম্বর আর খতিয়ান নম্বর, চারটাই দিতে হবে।', true);
+    return;
+  }
+
+  try {
+    const q = new URLSearchParams({ mouza_id, survey_type, dag, khatian });
+    const res = await fetch('/api/search?' + q.toString());
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+
+    if (data.count === 0) {
+      show('এই তথ্য দিয়ে কোনো জমি পাওয়া যায়নি। মৌজা, জরিপ, দাগ ও খতিয়ান নম্বর আবার মিলিয়ে দেখুন।', false);
+      return;
+    }
+
+    out.textContent = '';
+    data.lands.forEach(land => {
+      const box = document.createElement('div'); box.className = 'box';
+      addRow(box, 'বিভাগ', land.division);
+      addRow(box, 'জেলা', land.district);
+      addRow(box, 'উপজেলা', land.upazila);
+      addRow(box, 'মৌজা', land.mouza_name + ' (জেএল ' + land.jl_number + ')');
+      addRow(box, 'জরিপের ধরন', land.survey_type);
+      addRow(box, 'দাগ নম্বর', land.dag_number);
+      addRow(box, 'খতিয়ান নম্বর', land.khatian_number);
+      addRow(box, 'মালিক', land.owner);
+      addRow(box, 'জমির পরিমাণ', land.recorded_area + ' ' + (unitNames[land.area_unit] || land.area_unit));
+      addRow(box, 'জমির ধরন', landClassNames[land.land_class] || land.land_class);
+
+      if (land.risks.length === 0) {
+        const ok = document.createElement('div'); ok.className = 'ok';
+        ok.textContent = 'এই জমিতে কোনো মামলা, বন্ধক, বায়না বা অধিগ্রহণের রেকর্ড নেই।';
+        box.appendChild(ok);
+      } else {
+        land.risks.forEach(r => {
+          const d = document.createElement('div'); d.className = 'risk';
+          d.textContent = (riskNames[r.risk_type] || r.risk_type) +
+            ' | নম্বর: ' + (r.reference_number || '-') +
+            ' | অবস্থা: ' + (statusNames[r.record_status] || r.record_status) +
+            ' | ' + describeRisk(r.description);
+          box.appendChild(d);
+        });
+      }
+      out.appendChild(box);
+    });
+  } catch (e) {
+    show('সমস্যা হয়েছে: ' + e.message, true);
+  }
+});
+
+loadMouzas();
+
+// ---- top bar (who is logged in) and the option buttons ----
+(function () {
+  const roleNames = { USER: 'ইউজার', OFFICER: 'অফিসার', ADMIN: 'অ্যাডমিন' };
+  let user = null;
+  try { user = JSON.parse(sessionStorage.getItem('user') || 'null'); } catch (e) { user = null; }
+
+  const bar = document.getElementById('topbar');
+  const who = document.createElement('span');
+  const right = document.createElement('span');
+
+  if (!user) {
+    who.textContent = 'আপনি লগইন করেননি';
+    const a = document.createElement('a');
+    a.href = '/login.html';
+    a.textContent = 'লগইন';
+    right.appendChild(a);
+  } else {
+    who.textContent = 'স্বাগতম, ' + user.name + ' (' + (roleNames[user.role] || user.role) + ')';
+    const out = document.createElement('button');
+    out.type = 'button';
+    out.textContent = 'লগআউট';
+    out.addEventListener('click', function () {
+      sessionStorage.clear();
+      location.reload();
+    });
+    right.appendChild(out);
+  }
+  bar.append(who, right);
+
+  const tabs = document.getElementById('tabs');
+  const items = [['জমি খুঁজুন', '/', true]];
+  if (user && user.role === 'USER') {
+    items.push(['বায়না জমা দিন', '/bayna.html', false]);
+    items.push(['বন্ধক জমা দিন', '/mortgage.html', false]);
+  } else if (user && user.role === 'OFFICER') {
+    items.push(['মামলা জমা দিন', '/officer.html', false]);
+  } else if (user && user.role === 'ADMIN') {
+    items.push(['অ্যাডমিন পেজ', '/admin.html', false]);
+  }
+  items.push(['আরো জানুন', '/learn.html', false]);
+  items.forEach(function (it) {
+    const a = document.createElement('a');
+    a.href = it[1];
+    a.textContent = it[0];
+    if (it[2]) a.className = 'active';
+    tabs.appendChild(a);
+  });
+})();
+</script>
+
+<script src="/i18n.js"></script>
+<script src="/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>অ্যাডমিন | জমি যাচাই</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f2f6f3; margin: 0; color: #1d2b22; }
+  header { background: #0b6b3a; color: #fff; padding: 18px; text-align: center; font-size: 22px; }
+  main { max-width: 860px; margin: 20px auto; padding: 0 14px; }
+  .box { background: #fff; border-radius: 10px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+  h2 { margin: 0 0 10px; font-size: 18px; }
+  .row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px solid #eee; }
+  .row span:first-child { color: #556; flex-shrink: 0; }
+  .row span:last-child { text-align: right; overflow-wrap: anywhere; }
+  .card { border: 1px solid #dfe9e2; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+  .detail { background: #fff4e5; border-left: 4px solid #e08a00; padding: 8px 10px; margin-top: 8px; border-radius: 4px; overflow-wrap: anywhere; }
+  .actions { display: flex; gap: 8px; margin-top: 12px; }
+  button { flex: 1; padding: 10px; font-size: 16px; border: 0; border-radius: 6px; cursor: pointer; color: #fff; }
+  .approve { background: #0b6b3a; }
+  .reject { background: #b00020; }
+  .msg { padding: 8px 10px; border-radius: 4px; margin-bottom: 12px; }
+  .err { background: #fdecea; border-left: 4px solid #b00020; color: #b00020; }
+  .ok { background: #e8f6ec; border-left: 4px solid #0b6b3a; }
+  a { color: #0b6b3a; }
+  .compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 10px; }
+  .panel { border: 1px solid #dfe9e2; border-radius: 8px; padding: 10px 12px; background: #fafcfa; }
+  .panel h3 { margin: 0 0 6px; font-size: 15px; color: #0b6b3a; }
+  .warn { background: #fdecea; border-left: 4px solid #b00020; padding: 8px 10px; margin-top: 10px; border-radius: 4px; color: #7a0016; }
+  .match { background: #e8f6ec; border-left: 4px solid #0b6b3a; padding: 8px 10px; margin-top: 10px; border-radius: 4px; }
+  .info { background: #eef4fb; border-left: 4px solid #2f6fb3; padding: 8px 10px; margin-top: 10px; border-radius: 4px; }
+  .other { border-bottom: 1px solid #eee; padding: 4px 0; font-size: 14px; }
+</style>
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<header>অ্যাডমিন পেজ</header>
+<main>
+  <div id="message"></div>
+
+  <div class="box">
+    <h2>অপেক্ষমাণ মামলা (যাচাই করুন)</h2>
+    <div id="caseList">লোড হচ্ছে...</div>
+  </div>
+
+  <div class="box">
+    <h2>অপেক্ষমাণ বায়না (যাচাই করুন)</h2>
+    <div id="baynaList">লোড হচ্ছে...</div>
+  </div>
+
+  <div class="box">
+    <h2>অপেক্ষমাণ বন্ধক (যাচাই করুন)</h2>
+    <div id="mortgageList">লোড হচ্ছে...</div>
+  </div>
+
+  <div class="box">
+    <h2>অপেক্ষমাণ নিষ্পত্তির আবেদন (যাচাই করুন)</h2>
+    <div id="closureList">লোড হচ্ছে...</div>
+  </div>
+
+  <div class="box">
+    <h2>অপেক্ষমাণ অফিসার আবেদন</h2>
+    <div id="officerList">লোড হচ্ছে...</div>
+  </div>
+
+  <p><a href="/login.html">← লগইন পেজে ফিরুন</a></p>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const token = sessionStorage.getItem('token');
+const user = JSON.parse(sessionStorage.getItem('user') || 'null');
+
+const riskNames = { KHAS: 'খাস জমি', ACQUISITION: 'সরকারি অধিগ্রহণ', CASE: 'মামলা', ADVANCE: 'বায়না', MORTGAGE: 'বন্ধক' };
+const reviewNames = { PENDING: 'যাচাইয়ের অপেক্ষায়', APPROVED: 'অনুমোদিত' };
+const warningNames = {
+  SAME_CASE_NUMBER_ON_OTHER_LAND: 'এই মামলার নম্বর অন্য একটা জমিতেও দেওয়া আছে। সতর্কভাবে মিলিয়ে দেখুন।',
+  OFFICER_DISTRICT_DIFFERS: 'অফিসারের থানার জেলা আর জমির জেলা আলাদা। সতর্কভাবে মিলিয়ে দেখুন।',
+  LAND_IS_KHAS: 'এই জমি সরকারি খাস জমি হিসেবে রেকর্ডে আছে। ব্যক্তিগত বিরোধের মামলা এখানে সন্দেহজনক। শুধু খাস জমি দখল বা জালিয়াতির মামলা হলে অনুমোদন করুন।',
+  NAME_MISMATCH: 'জমা দেওয়া নাম রেকর্ডে থাকা মালিকের নামের সাথে মেলে না। ওয়ারিশ বা আমমোক্তার কিনা যাচাই করুন।',
+  LAND_UNDER_ACQUISITION: 'এই জমি সরকারি অধিগ্রহণের আওতায় আছে।',
+  OTHER_ACTIVE_DEAL: 'এই জমিতে আগে থেকেই আরেকটা চলমান বায়না বা বন্ধক অনুমোদিত আছে।',
+  ACTIVE_CASE_ON_LAND: 'এই জমিতে একটা চলমান মামলা অনুমোদিত আছে।',
+  VALID_UNTIL_PAST: 'মেয়াদের তারিখ আজকের আগে, অর্থাৎ মেয়াদ শেষ।'
+};
+
+function showMessage(text, isError) {
+  const m = $('message');
+  m.textContent = '';
+  if (!text) return;
+  const d = document.createElement('div');
+  d.className = 'msg ' + (isError ? 'err' : 'ok');
+  d.textContent = text;
+  m.appendChild(d);
+}
+
+async function api(url, method) {
+  const res = await fetch(url, {
+    method: method || 'GET',
+    headers: { Authorization: 'Bearer ' + token }
+  });
+  return { status: res.status, data: await res.json() };
+}
+
+function addRow(parent, label, value) {
+  const row = document.createElement('div');
+  row.className = 'row';
+  const a = document.createElement('span'); a.textContent = label;
+  const b = document.createElement('span'); b.textContent = value || '-';
+  row.append(a, b);
+  parent.appendChild(row);
+}
+
+function makePanel(title) {
+  const p = document.createElement('div');
+  p.className = 'panel';
+  const h = document.createElement('h3');
+  h.textContent = title;
+  p.appendChild(h);
+  return p;
+}
+
+function addButtons(card, onApprove, onReject) {
+  const actions = document.createElement('div');
+  actions.className = 'actions';
+  const ok = document.createElement('button');
+  ok.className = 'approve'; ok.textContent = 'অনুমোদন দিন';
+  ok.addEventListener('click', onApprove);
+  const no = document.createElement('button');
+  no.className = 'reject'; no.textContent = 'বাতিল করুন';
+  no.addEventListener('click', onReject);
+  actions.append(ok, no);
+  card.appendChild(actions);
+}
+
+function addNote(card, cls, text) {
+  const d = document.createElement('div');
+  d.className = cls;
+  d.textContent = text;
+  card.appendChild(d);
+}
+
+function addOthers(card, records) {
+  const others = makePanel('এই জমির অন্যান্য রেকর্ড');
+  others.style.marginTop = '10px';
+  if (records.length === 0) {
+    const none = document.createElement('div');
+    none.textContent = 'এই জমিতে আর কোনো রেকর্ড নেই।';
+    others.appendChild(none);
+  } else {
+    records.forEach(o => {
+      const line = document.createElement('div');
+      line.className = 'other';
+      line.textContent = (riskNames[o.risk_type] || o.risk_type) +
+        ' | নম্বর: ' + (o.reference_number || '-') +
+        ' | ' + (reviewNames[o.review_status] || o.review_status) +
+        ' | ' + String(o.record_date || '').slice(0, 10);
+      others.appendChild(line);
+    });
+  }
+  card.appendChild(others);
+}
+
+function landPanel(c) {
+  const right = makePanel('ডাটাবেজে থাকা জমির তথ্য');
+  addRow(right, 'মৌজা', c.mouza_name + ' (জেএল ' + c.jl_number + ')');
+  addRow(right, 'উপজেলা / জেলা', c.upazila + ', ' + c.district);
+  addRow(right, 'জরিপ / দাগ', c.survey_type + ' / ' + c.dag_number);
+  addRow(right, 'খতিয়ান', c.khatian_number);
+  addRow(right, 'মালিক', c.owners.map(o => o.owner).filter(Boolean).join(', '));
+  addRow(right, 'জমির পরিমাণ', c.recorded_area + ' ' + c.area_unit);
+  addRow(right, 'জমির ধরন', c.land_class);
+  return right;
+}
+
+async function decide(url, label, reload) {
+  try {
+    const r = await api(url, 'POST');
+    if (!r.data.ok) return showMessage('কাজ হয়নি: ' + r.data.error, true);
+    showMessage(label, false);
+    reload();
+  } catch (e) {
+    showMessage('সার্ভারের সাথে যোগাযোগ করা যায়নি।', true);
+  }
+}
+
+// ---------------- Cases ----------------
+async function loadCases() {
+  const list = $('caseList');
+  try {
+    const r = await api('/api/admin/pending-cases');
+    if (!r.data.ok) { list.textContent = 'তালিকা আনা যায়নি।'; return; }
+    list.textContent = '';
+    if (r.data.cases.length === 0) { list.textContent = 'এখন কোনো অপেক্ষমাণ মামলা নেই।'; return; }
+
+    r.data.cases.forEach(c => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      const compare = document.createElement('div');
+      compare.className = 'compare';
+
+      const left = makePanel('অফিসারের জমা দেওয়া তথ্য');
+      addRow(left, 'মামলার নম্বর', c.reference_number);
+      addRow(left, 'মামলার তারিখ', String(c.record_date).slice(0, 10));
+      addRow(left, 'অফিসার', c.officer_name);
+      addRow(left, 'ব্যাচ নম্বর', c.badge_number);
+      addRow(left, 'থানা', (c.police_station || '-') + (c.officer_district ? ', ' + c.officer_district : ''));
+      addNote(left, 'detail', c.description);
+
+      compare.append(left, landPanel(c));
+      card.appendChild(compare);
+      addOthers(card, c.other_records);
+      c.warnings.forEach(w => addNote(card, 'warn', '⚠ ' + (warningNames[w] || w)));
+      const s = c.officer_stats;
+      addNote(card, 'info', 'এই অফিসার মোট ' + s.total + 'টা মামলা জমা দিয়েছেন: ' + s.approved + 'টা অনুমোদিত, ' + s.rejected + 'টা বাতিল।');
+
+      addButtons(card,
+        () => { if (confirm('জমির তথ্য মিলিয়ে দেখেছেন? এই মামলা অনুমোদন করলে এটা সবার জন্য জমির তথ্যে দেখাবে।'))
+                  decide('/api/admin/cases/' + c.risk_id + '/approve', 'মামলা অনুমোদন করা হয়েছে।', loadCases); },
+        () => { if (confirm('এই মামলা বাতিল করবেন?'))
+                  decide('/api/admin/cases/' + c.risk_id + '/reject', 'মামলা বাতিল করা হয়েছে।', loadCases); });
+      list.appendChild(card);
+    });
+  } catch (e) {
+    list.textContent = 'সার্ভারের সাথে যোগাযোগ করা যায়নি।';
+  }
+}
+
+// ---------------- Bayna and mortgage (separate boxes) ----------------
+function renderDeal(d, container, isBayna) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  const compare = document.createElement('div');
+  compare.className = 'compare';
+
+  const left = makePanel('ইউজারের জমা দেওয়া তথ্য');
+  addRow(left, isBayna ? 'বায়নানামার নম্বর' : 'বন্ধকের দলিল নম্বর', d.reference_number);
+  addRow(left, isBayna ? 'বিক্রেতার নাম' : 'ঋণগ্রহীতার নাম (জমির মালিক)', d.party_name);
+  addRow(left, 'টাকার পরিমাণ', d.amount ? Number(d.amount).toLocaleString(window.TT_LOCALE ? TT_LOCALE() : 'bn-BD') + ' টাকা' : '-');
+  addRow(left, 'তারিখ', String(d.record_date).slice(0, 10));
+  addRow(left, 'মেয়াদ', d.valid_until);
+  addRow(left, 'জমা দিয়েছেন', (d.submitter_name || '-') + ' (' + (d.submitter_email || '-') + ')');
+  if (d.note) addNote(left, 'detail', d.note);
+
+  compare.append(left, landPanel(d));
+  card.appendChild(compare);
+  addOthers(card, d.other_records);
+
+  if (d.name_matches === true) addNote(card, 'match', '✔ জমা দেওয়া নাম রেকর্ডে থাকা মালিকের নামের সাথে মিলেছে।');
+  d.warnings.forEach(w => addNote(card, 'warn', '⚠ ' + (warningNames[w] || w)));
+  const s = d.submitter_stats;
+  addNote(card, 'info', 'এই ইউজার মোট ' + s.total + 'টা বায়না বা বন্ধক জমা দিয়েছেন: ' + s.approved + 'টা অনুমোদিত, ' + s.rejected + 'টা বাতিল।');
+
+  const word = isBayna ? 'বায়না' : 'বন্ধক';
+  addButtons(card,
+    () => { if (confirm('জমির তথ্য মিলিয়ে দেখেছেন? এই ' + word + ' অনুমোদন করলে মেয়াদসহ সবার জন্য জমির তথ্যে দেখাবে (টাকার পরিমাণ ও নাম দেখাবে না)।'))
+              decide('/api/admin/deals/' + d.risk_id + '/approve', word + ' অনুমোদন করা হয়েছে।', loadDeals); },
+    () => { if (confirm('এই ' + word + ' বাতিল করবেন?'))
+              decide('/api/admin/deals/' + d.risk_id + '/reject', word + ' বাতিল করা হয়েছে।', loadDeals); });
+  container.appendChild(card);
+}
+
+async function loadDeals() {
+  const bList = $('baynaList');
+  const mList = $('mortgageList');
+  try {
+    const r = await api('/api/admin/pending-deals');
+    if (!r.data.ok) {
+      bList.textContent = 'তালিকা আনা যায়নি।';
+      mList.textContent = 'তালিকা আনা যায়নি।';
+      return;
+    }
+    bList.textContent = '';
+    mList.textContent = '';
+    const bayna = r.data.deals.filter(d => d.risk_type === 'ADVANCE');
+    const mortgage = r.data.deals.filter(d => d.risk_type === 'MORTGAGE');
+
+    if (bayna.length === 0) bList.textContent = 'এখন কোনো অপেক্ষমাণ বায়না নেই।';
+    bayna.forEach(d => renderDeal(d, bList, true));
+
+    if (mortgage.length === 0) mList.textContent = 'এখন কোনো অপেক্ষমাণ বন্ধক নেই।';
+    mortgage.forEach(d => renderDeal(d, mList, false));
+  } catch (e) {
+    bList.textContent = 'সার্ভারের সাথে যোগাযোগ করা যায়নি।';
+    mList.textContent = 'সার্ভারের সাথে যোগাযোগ করা যায়নি।';
+  }
+}
+
+// ---------------- Case closure ----------------
+const closureNames = { JUDGMENT: 'রায় হয়েছে', DISMISSED: 'মামলা খারিজ', SETTLED: 'আপস হয়েছে', WITHDRAWN: 'প্রত্যাহার', OTHER: 'অন্য' };
+
+async function loadClosures() {
+  const list = $('closureList');
+  try {
+    const r = await api('/api/admin/pending-closures');
+    if (!r.data.ok) { list.textContent = 'তালিকা আনা যায়নি।'; return; }
+    list.textContent = '';
+    if (r.data.closures.length === 0) { list.textContent = 'এখন কোনো অপেক্ষমাণ নিষ্পত্তির আবেদন নেই।'; return; }
+
+    r.data.closures.forEach(d => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      const compare = document.createElement('div');
+      compare.className = 'compare';
+
+      const left = makePanel('আবেদনকারীর দেওয়া নিষ্পত্তির তথ্য');
+      addRow(left, 'নিষ্পত্তির তারিখ', d.closure_date);
+      addRow(left, 'নিষ্পত্তির ধরন', closureNames[d.closure_type] || d.closure_type);
+      addRow(left, 'আদেশ বা রায়ের নম্বর', d.order_number);
+      addRow(left, 'আবেদনকারী অফিসার', d.requester_name);
+      addRow(left, 'ব্যাচ নম্বর', d.badge_number);
+      addRow(left, 'থানা', d.police_station);
+      if (d.closure_details) addNote(left, 'detail', d.closure_details);
+
+      const right = landPanel(d);
+      right.firstChild.textContent = 'ডাটাবেজে থাকা মামলা ও জমির তথ্য';
+      addRow(right, 'মামলার নম্বর', d.reference_number);
+      addRow(right, 'মামলার তারিখ', d.case_date);
+      addNote(right, 'detail', d.case_description);
+
+      compare.append(left, right);
+      card.appendChild(compare);
+      addOthers(card, d.other_records);
+      addNote(card, 'info', 'মামলাটা মূলত জমা দিয়েছিলেন: ' + (d.original_officer_name || 'অজানা (পুরনো রেকর্ড)') +
+        '। নিষ্পত্তির আবেদন করেছেন: ' + (d.requester_name || '-') + '।');
+
+      addButtons(card,
+        () => { if (confirm('তথ্য মিলিয়ে দেখেছেন? অনুমোদন করলে মামলাটা "নিষ্পত্তি হয়েছে" হিসেবে সবার জন্য দেখাবে।'))
+                  decide('/api/admin/closures/' + d.closure_id + '/approve', 'নিষ্পত্তি অনুমোদন করা হয়েছে।', loadClosures); },
+        () => { if (confirm('এই নিষ্পত্তির আবেদন বাতিল করবেন? মামলা আগের মতোই চলমান থাকবে।'))
+                  decide('/api/admin/closures/' + d.closure_id + '/reject', 'নিষ্পত্তির আবেদন বাতিল করা হয়েছে।', loadClosures); });
+      list.appendChild(card);
+    });
+  } catch (e) {
+    list.textContent = 'সার্ভারের সাথে যোগাযোগ করা যায়নি।';
+  }
+}
+
+// ---------------- Officers ----------------
+async function loadOfficers() {
+  const list = $('officerList');
+  try {
+    const r = await api('/api/admin/pending-officers');
+    if (!r.data.ok) { list.textContent = 'তালিকা আনা যায়নি।'; return; }
+    list.textContent = '';
+    if (r.data.officers.length === 0) { list.textContent = 'এখন কোনো অপেক্ষমাণ আবেদন নেই।'; return; }
+    r.data.officers.forEach(o => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      const compare = document.createElement('div');
+      compare.className = 'compare';
+
+      const left = makePanel('আবেদনকারীর দেওয়া তথ্য');
+      addRow(left, 'নাম', o.name);
+      addRow(left, 'ব্যাচ নম্বর', o.badge_number);
+      addRow(left, 'অফিসার আইডি', o.officer_id_number);
+      addRow(left, 'ইমেইল', o.email);
+      addRow(left, 'আবেদনের সময়', new Date(o.created_at).toLocaleString(window.TT_LOCALE ? TT_LOCALE() : 'bn-BD'));
+
+      const right = makePanel('পুলিশ তালিকায় থাকা তথ্য');
+      addRow(right, 'নাম', o.registry_name);
+      addRow(right, 'ব্যাচ নম্বর', o.badge_number);
+      addRow(right, 'অফিসার আইডি', o.officer_id_number);
+      addRow(right, 'পদবি', o.rank_title);
+      addRow(right, 'থানা', o.police_station);
+      addRow(right, 'জেলা', o.district);
+      addRow(right, 'থানার ফোন (ডেমো)', o.station_phone);
+
+      compare.append(left, right);
+      card.appendChild(compare);
+
+      const sameName = (o.name || '').trim().toLowerCase() === (o.registry_name || '').trim().toLowerCase();
+      if (sameName) addNote(card, 'match', '✔ আবেদনকারীর নাম পুলিশ তালিকার নামের সাথে মিলেছে।');
+      else addNote(card, 'warn', '⚠ আবেদনকারীর নাম পুলিশ তালিকার নামের সাথে মেলে না।');
+      addNote(card, 'match', '✔ ব্যাচ নম্বর, অফিসার আইডি ও গোপন নিবন্ধন কোড পুলিশ তালিকার সাথে মিলেছে।');
+      addNote(card, 'warn', '☎ অনুমোদনের আগে ' + (o.police_station || 'থানায়') + ' ফোন করে (' + (o.station_phone || 'নম্বর নেই') + ') নিশ্চিত হোন যে এই নামের অফিসার সত্যিই আবেদন করেছেন।');
+      addNote(card, 'info', 'অনুমোদন দিলে ইনি ' + (o.police_station || '-') + ', ' + (o.district || '-') + ' থানার ' + (o.rank_title || 'অফিসার') + ' হিসেবে মামলা জমা ও নিষ্পত্তির আবেদন করতে পারবেন।');
+
+      addButtons(card,
+        () => { if (confirm('থানায় ফোন করে নিশ্চিত হয়েছেন? ' + o.name + '-এর আবেদন অনুমোদন করবেন?'))
+                  decide('/api/admin/officers/' + o.user_id + '/approve', o.name + '-এর আবেদন অনুমোদন করা হয়েছে।', loadOfficers); },
+        () => { if (confirm(o.name + '-এর আবেদন বাতিল করবেন?'))
+                  decide('/api/admin/officers/' + o.user_id + '/reject', o.name + '-এর আবেদন বাতিল করা হয়েছে।', loadOfficers); });
+      list.appendChild(card);
+    });
+  } catch (e) {
+    list.textContent = 'সার্ভারের সাথে যোগাযোগ করা যায়নি।';
+  }
+}
+
+if (!token || !user || user.role !== 'ADMIN') {
+  $('caseList').textContent = 'এই পেজ দেখতে অ্যাডমিন হিসেবে লগইন করতে হবে।';
+  $('baynaList').textContent = '';
+  $('mortgageList').textContent = '';
+  $('closureList').textContent = '';
+  $('officerList').textContent = '';
+} else {
+  loadCases();
+  loadDeals();
+  loadClosures();
+  loadOfficers();
+}
+</script>
+<script src="/i18n.js"></script>
+<script src="/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#cfe8d5"/>
+      <stop offset="1" stop-color="#8cc79b"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <g stroke="#ffffff" stroke-opacity=".35" stroke-width="3">
+    <polygon points="0,0 520,0 470,260 0,300" fill="#86c46f"/>
+    <polygon points="520,0 1010,0 960,230 470,260" fill="#c9d86a"/>
+    <polygon points="1010,0 1600,0 1600,240 960,230" fill="#6fb37a"/>
+    <polygon points="0,300 470,260 520,520 0,560" fill="#d9c96a"/>
+    <polygon points="470,260 960,230 1040,480 520,520" fill="#5aa86a"/>
+    <polygon points="960,230 1600,240 1600,500 1040,480" fill="#a8cf72"/>
+    <polygon points="0,560 520,520 600,900 0,900" fill="#7ab86e"/>
+    <polygon points="520,520 1040,480 1120,900 600,900" fill="#e0cf74"/>
+    <polygon points="1040,480 1600,500 1600,900 1120,900" fill="#62ab72"/>
+  </g>
+  <path d="M-20 420 C 300 360, 500 560, 800 470 S 1300 360, 1620 450" fill="none" stroke="#5fa8d3" stroke-width="26" stroke-opacity=".85"/>
+</svg>

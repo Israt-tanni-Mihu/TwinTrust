@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>লগইন | জমি যাচাই</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f2f6f3; margin: 0; color: #1d2b22; }
+  header { background: #0b6b3a; color: #fff; padding: 18px; text-align: center; font-size: 22px; }
+  main { max-width: 460px; margin: 20px auto; padding: 0 14px; }
+  .box { background: #fff; border-radius: 10px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+  .tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+  .tabs button { flex: 1; margin: 0; padding: 10px 4px; font-size: 14px; background: #dfe9e2; color: #0b6b3a; }
+  .tabs button.active { background: #0b6b3a; color: #fff; }
+  label { display: block; margin: 12px 0 4px; font-weight: bold; }
+  input { width: 100%; padding: 10px; font-size: 16px; border: 1px solid #aab; border-radius: 6px; box-sizing: border-box; }
+  button { margin-top: 16px; width: 100%; padding: 12px; font-size: 17px; background: #0b6b3a; color: #fff; border: 0; border-radius: 6px; cursor: pointer; }
+  .msg { margin-top: 12px; padding: 8px 10px; border-radius: 4px; }
+  .err { background: #fdecea; border-left: 4px solid #b00020; color: #b00020; }
+  .ok { background: #e8f6ec; border-left: 4px solid #0b6b3a; }
+  .hint { font-size: 14px; color: #556; margin: 4px 0 0; }
+  .hidden { display: none; }
+  a { color: #0b6b3a; }
+  .pw-wrap { position: relative; display: block; }
+  .pw-wrap input { padding-right: 48px; }
+  .pw-wrap .eye { position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    width: auto; margin: 0; padding: 4px 8px; background: transparent; color: #0b6b3a;
+    font-size: 20px; line-height: 1; border: 0; cursor: pointer; }
+</style>
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<header>জমি যাচাই</header>
+<main>
+  <div class="box" id="authBox">
+    <div class="tabs">
+      <button id="tabLogin" class="active">লগইন</button>
+      <button id="tabRegister">নতুন অ্যাকাউন্ট</button>
+      <button id="tabOfficer">অফিসার আবেদন</button>
+    </div>
+
+    <div id="loginForm">
+      <label for="lEmail">ইমেইল</label>
+      <input id="lEmail" type="email" autocomplete="username">
+      <label for="lPass">পাসওয়ার্ড</label>
+      <input id="lPass" type="password" autocomplete="current-password">
+      <button id="loginBtn">লগইন করুন</button>
+    </div>
+
+    <div id="registerForm" class="hidden">
+      <label for="rName">নাম</label>
+      <input id="rName" autocomplete="name">
+      <label for="rEmail">ইমেইল</label>
+      <input id="rEmail" type="email" autocomplete="username">
+      <label for="rPass">পাসওয়ার্ড (কমপক্ষে ৮ অক্ষর)</label>
+      <input id="rPass" type="password" autocomplete="new-password">
+      <button id="registerBtn">অ্যাকাউন্ট খুলুন</button>
+    </div>
+
+    <div id="officerForm" class="hidden">
+      <p class="hint">পুলিশের তালিকার সাথে তথ্য আর আপনার গোপন নিবন্ধন কোড মিললে আবেদন জমা হবে। অ্যাডমিন যাচাই করে অনুমোদন দিলে লগইন করা যাবে।</p>
+      <label for="oName">নাম (সরকারি রেকর্ড অনুযায়ী)</label>
+      <input id="oName" autocomplete="name">
+      <label for="oBadge">ব্যাচ নম্বর</label>
+      <input id="oBadge" autocomplete="off">
+      <label for="oId">অফিসার আইডি নম্বর</label>
+      <input id="oId" autocomplete="off">
+      <label for="oCode">নিবন্ধন কোড (বিভাগ থেকে পাওয়া গোপন কোড)</label>
+      <input id="oCode" type="password" autocomplete="off">
+      <label for="oEmail">ইমেইল</label>
+      <input id="oEmail" type="email" autocomplete="username">
+      <label for="oPass">পাসওয়ার্ড (কমপক্ষে ৮ অক্ষর)</label>
+      <input id="oPass" type="password" autocomplete="new-password">
+      <button id="officerBtn">আবেদন জমা দিন</button>
+    </div>
+
+    <div id="message"></div>
+  </div>
+
+  <div class="box hidden" id="welcomeBox">
+    <p id="welcomeText"></p>
+    <p><a href="/">জমি খোঁজার পেজে যান</a></p>
+    <p id="adminLink" class="hidden"><a href="/admin.html">অ্যাডমিন পেজে যান</a></p>
+    <p id="officerLink" class="hidden"><a href="/officer.html">মামলা জমা দিন</a></p>
+       <p id="userLink" class="hidden"><a href="/bayna.html">বায়না জমা দিন</a> | <a href="/mortgage.html">বন্ধক জমা দিন</a></p>
+    <button id="logoutBtn">লগআউট</button>
+  </div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const roleNames = { USER: 'ইউজার', OFFICER: 'অফিসার', ADMIN: 'অ্যাডমিন' };
+const errorNames = {
+  'This account is not active': 'আপনার অ্যাকাউন্ট এখনো চালু হয়নি। অ্যাডমিনের অনুমোদনের অপেক্ষা করুন।',
+  'Email or password is incorrect': 'ইমেইল বা পাসওয়ার্ড ঠিক নেই।',
+  'This email is already registered': 'এই ইমেইল দিয়ে আগেই অ্যাকাউন্ট খোলা হয়েছে।',
+  'Your details did not match': 'আপনার দেওয়া তথ্য বা নিবন্ধন কোড মেলেনি।',
+  'Registration code is required': 'নিবন্ধন কোড দিন।',
+  'Too many attempts': 'অনেকবার চেষ্টা করেছেন। ১৫ মিনিট পর আবার চেষ্টা করুন।',
+  'Password must be at least 8 characters': 'পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।'
+};
+
+function showMessage(text, isError) {
+  const m = $('message');
+  m.textContent = '';
+  if (!text) return;
+  const d = document.createElement('div');
+  d.className = 'msg ' + (isError ? 'err' : 'ok');
+  d.textContent = text;
+  m.appendChild(d);
+}
+
+function switchTab(name) {
+  $('loginForm').classList.toggle('hidden', name !== 'login');
+  $('registerForm').classList.toggle('hidden', name !== 'register');
+  $('officerForm').classList.toggle('hidden', name !== 'officer');
+  $('tabLogin').classList.toggle('active', name === 'login');
+  $('tabRegister').classList.toggle('active', name === 'register');
+  $('tabOfficer').classList.toggle('active', name === 'officer');
+  showMessage('');
+}
+$('tabLogin').addEventListener('click', () => switchTab('login'));
+$('tabRegister').addEventListener('click', () => switchTab('register'));
+$('tabOfficer').addEventListener('click', () => switchTab('officer'));
+
+function showWelcome(user) {
+  $('authBox').classList.add('hidden');
+  $('welcomeBox').classList.remove('hidden');
+  $('welcomeText').textContent = 'স্বাগতম, ' + user.name + ' (' + (roleNames[user.role] || user.role) + ')';
+  $('adminLink').classList.toggle('hidden', user.role !== 'ADMIN');
+  $('officerLink').classList.toggle('hidden', user.role !== 'OFFICER');
+  $('userLink').classList.toggle('hidden', user.role !== 'USER');
+}
+
+async function post(url, body) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  return res.json();
+}
+
+$('loginBtn').addEventListener('click', async () => {
+  const email = $('lEmail').value.trim();
+  const password = $('lPass').value;
+  if (!email || !password) return showMessage('ইমেইল আর পাসওয়ার্ড দিন।', true);
+  try {
+    const data = await post('/api/login', { email, password });
+    if (!data.ok) return showMessage(errorNames[data.error] || ('লগইন হয়নি: ' + data.error), true);
+    sessionStorage.setItem('token', data.token);
+    sessionStorage.setItem('user', JSON.stringify(data.user));
+    showWelcome(data.user);
+  } catch (e) {
+    showMessage('সার্ভারের সাথে যোগাযোগ করা যায়নি।', true);
+  }
+});
+
+$('registerBtn').addEventListener('click', async () => {
+  const name = $('rName').value.trim();
+  const email = $('rEmail').value.trim();
+  const password = $('rPass').value;
+  if (!name || !email || !password) return showMessage('সব ঘর পূরণ করুন।', true);
+  try {
+    const data = await post('/api/register', { name, email, password });
+    if (!data.ok) return showMessage(errorNames[data.error] || ('অ্যাকাউন্ট হয়নি: ' + data.error), true);
+    switchTab('login');
+    $('lEmail').value = email;
+    showMessage('অ্যাকাউন্ট খোলা হয়েছে। এখন লগইন করুন।', false);
+  } catch (e) {
+    showMessage('সার্ভারের সাথে যোগাযোগ করা যায়নি।', true);
+  }
+});
+
+$('officerBtn').addEventListener('click', async () => {
+  const body = {
+    name: $('oName').value.trim(),
+    badge_number: $('oBadge').value.trim(),
+    officer_id_number: $('oId').value.trim(),
+    registration_code: $('oCode').value.trim(),
+    email: $('oEmail').value.trim(),
+    password: $('oPass').value
+  };
+  if (!body.name || !body.badge_number || !body.officer_id_number || !body.registration_code || !body.email || !body.password) {
+    return showMessage('সব ঘর পূরণ করুন।', true);
+  }
+  try {
+    const data = await post('/api/register-officer', body);
+    if (!data.ok) return showMessage(errorNames[data.error] || ('আবেদন হয়নি: ' + data.error), true);
+    switchTab('login');
+    showMessage('আবেদন জমা হয়েছে। অ্যাডমিন অনুমোদন দিলে লগইন করতে পারবেন।', false);
+  } catch (e) {
+    showMessage('সার্ভারের সাথে যোগাযোগ করা যায়নি।', true);
+  }
+});
+
+$('logoutBtn').addEventListener('click', () => {
+  sessionStorage.clear();
+  location.reload();
+});
+
+function tabFromHash() {
+  const h = location.hash.replace('#', '');
+  if (h === 'register' || h === 'officer' || h === 'login') switchTab(h);
+}
+window.addEventListener('hashchange', tabFromHash);
+tabFromHash();
+
+const saved = sessionStorage.getItem('user');
+if (saved) showWelcome(JSON.parse(saved));
+</script>
+<script>
+document.querySelectorAll('input[type="password"]').forEach(function (input) {
+  const wrap = document.createElement('span');
+  wrap.className = 'pw-wrap';
+  input.parentNode.insertBefore(wrap, input);
+  wrap.appendChild(input);
+
+  const eye = document.createElement('button');
+  eye.type = 'button';
+  eye.className = 'eye';
+  eye.textContent = '👁';
+  eye.setAttribute('aria-label', 'পাসওয়ার্ড দেখুন');
+  eye.addEventListener('click', function () {
+    const hidden = input.type === 'password';
+    input.type = hidden ? 'text' : 'password';
+    eye.textContent = hidden ? '🙈' : '👁';
+    eye.setAttribute('aria-label', hidden ? 'পাসওয়ার্ড লুকান' : 'পাসওয়ার্ড দেখুন');
+  });
+  wrap.appendChild(eye);
+});
+</script>
+<script src="/i18n.js"></script>
+<script src="/site.js"></script>
+</body>
+</html>

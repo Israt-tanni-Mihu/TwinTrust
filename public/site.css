@@ -1,0 +1,63 @@
+/* Twin Trust Land Verify: shared design */
+body.tt-bg {
+  background: linear-gradient(rgba(8, 50, 28, .45), rgba(8, 50, 28, .25)), url('/bg.jpg') center / cover fixed no-repeat;
+  min-height: 100vh;
+}
+body.tt-bg .topbar, body.tt-bg .topbar span, body.tt-bg main > p, body.tt-bg main > p a, body.tt-bg > nav:not(.tt-nav), body.tt-bg > nav:not(.tt-nav) a { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+body.tt-bg .topbar a { color: #fff; }
+body.tt-bg main > #message:empty { display: none; }
+
+.tt-footer { margin-top: 40px; background: rgba(8, 40, 22, .92); color: #e6f2ea; padding: 28px 18px 18px; font-size: 15px; line-height: 1.6; text-align: left; }
+.tt-foot-grid { max-width: 960px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; }
+.tt-footer h4 { margin: 0 0 8px; font-size: 16px; color: #f2c94c; }
+.tt-footer p { margin: 6px 0; }
+.tt-footer a { display: block; color: #e6f2ea; text-decoration: none; padding: 3px 0; }
+.tt-footer a:hover { text-decoration: underline; }
+.tt-footer .tt-foot-brand { display: flex; color: #fff; }
+.tt-foot-note, .tt-foot-copy { max-width: 960px; margin: 18px auto 0 !important; font-size: 13px; color: #b9d3c1; border-top: 1px solid rgba(255,255,255,.15); padding-top: 12px; text-align: center; }
+.tt-foot-copy { border: 0; margin-top: 4px !important; padding-top: 0; }
+.tt-bar {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: #fff; color: #1d2b22; padding: 8px 14px;
+  font-size: 16px; text-align: left;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .15);
+}
+.tt-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #0b6b3a; font-weight: bold; font-size: 16px; line-height: 1.25; }
+.tt-brand img { width: 38px; height: 38px; flex-shrink: 0; }
+.tt-right { display: flex; align-items: center; gap: 8px; }
+
+.tt-lang, .tt-burger, .tt-close, .tt-logout {
+  width: auto; margin: 0; padding: 6px 12px; font-size: 15px; line-height: 1.2;
+  background: #fff; color: #0b6b3a; border: 1px solid #0b6b3a; border-radius: 6px; cursor: pointer;
+}
+.tt-burger { font-size: 20px; padding: 4px 11px; }
+.tt-logout { width: 100%; margin-top: 16px; padding: 10px; background: #b00020; border-color: #b00020; color: #fff; }
+
+.tt-overlay { position: fixed; top: 0; right: 0; bottom: 0; left: 0; background: rgba(0, 0, 0, .4); z-index: 90; display: none; }
+.tt-overlay.open { display: block; }
+.tt-nav {
+  position: fixed; top: 0; right: -310px; width: 280px; height: 100%;
+  background: #fff; z-index: 100; padding: 16px; box-sizing: border-box; overflow-y: auto;
+  box-shadow: -4px 0 12px rgba(0, 0, 0, .25); transition: right .25s;
+  text-align: left; color: #1d2b22; font-size: 16px;
+}
+.tt-nav.open { right: 0; }
+.tt-nav-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.tt-nav-head .tt-brand { font-size: 15px; }
+.tt-nav a { display: block; padding: 11px 8px; color: #0b6b3a; text-decoration: none; border-bottom: 1px solid #eee; }
+.tt-nav a:hover { background: #f2f6f3; }
+.tt-nav h4 { margin: 16px 0 4px; font-size: 14px; color: #556; }
+.tt-who { margin: 8px 0; font-size: 14px; color: #556; }
+
+body > header:not(.tt-bar) { padding: 10px; font-size: 18px; }
+
+@media (max-width: 420px) {
+  .tt-brand span { font-size: 13px; }
+}
+/* slide-out menu: deep green text on white */
+body.tt-bg .tt-nav, body.tt-bg .tt-nav a, .tt-nav .tt-brand, .tt-nav .tt-brand span { color: #064d28; text-shadow: none; }
+.tt-nav a { font-weight: 600; }
+.tt-nav a:hover { background: #e3efe7; }
+.tt-nav h4, .tt-nav .tt-who { color: #3d5a47; text-shadow: none; }
+.tt-nav .tt-logout { color: #fff; }

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>মামলা জমা | জমি যাচাই</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f2f6f3; margin: 0; color: #1d2b22; }
+  header { background: #0b6b3a; color: #fff; padding: 18px; text-align: center; font-size: 22px; }
+  nav { max-width: 640px; margin: 12px auto 0; padding: 0 14px; display: flex; gap: 14px; flex-wrap: wrap; }
+  main { max-width: 640px; margin: 14px auto 20px; padding: 0 14px; }
+  .box { background: #fff; border-radius: 10px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+  h2 { margin: 0 0 10px; font-size: 18px; }
+  .hint { font-size: 14px; color: #556; margin: 0 0 6px; }
+  label { display: block; margin: 12px 0 4px; font-weight: bold; }
+  input, select, textarea { width: 100%; padding: 10px; font-size: 16px; border: 1px solid #aab; border-radius: 6px; box-sizing: border-box; background: #fff; font-family: inherit; }
+  textarea { min-height: 100px; resize: vertical; }
+  button { margin-top: 16px; width: 100%; padding: 12px; font-size: 17px; background: #0b6b3a; color: #fff; border: 0; border-radius: 6px; cursor: pointer; }
+  .msg { padding: 8px 10px; border-radius: 4px; margin-bottom: 12px; }
+  .err { background: #fdecea; border-left: 4px solid #b00020; color: #b00020; }
+  .ok { background: #e8f6ec; border-left: 4px solid #0b6b3a; }
+  .row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 15px; }
+  a { color: #0b6b3a; }
+</style>
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<header>মামলা জমা দিন</header>
+<nav>
+  <a href="/">জমি খুঁজুন</a>
+  <a href="/login.html">← লগইন পেজে ফিরুন</a>
+</nav>
+<main>
+  <div id="message"></div>
+
+  <div class="box" id="formBox">
+    <p class="hint">জমির চারটা তথ্য ঠিকমতো দিন। জমা দেওয়ার পর অ্যাডমিন যাচাই করবেন। অনুমোদন না হওয়া পর্যন্ত তথ্যটা সবার কাছে দেখাবে না।</p>
+
+    <label for="mouza">১. মৌজা</label>
+    <select id="mouza"><option value="">লোড হচ্ছে...</option></select>
+
+    <label for="survey">২. জরিপের ধরন</label>
+    <select id="survey">
+      <option value="">জরিপ বেছে নিন</option>
+      <option value="CS">CS</option>
+      <option value="SA">SA</option>
+      <option value="RS">RS</option>
+      <option value="BS">BS</option>
+    </select>
+
+    <label for="dag">৩. দাগ নম্বর</label>
+    <input id="dag" placeholder="যেমন D-101">
+
+    <label for="khatian">৪. খতিয়ান নম্বর</label>
+    <input id="khatian" placeholder="যেমন K-201">
+
+    <label for="caseType">মামলার ধরন</label>
+    <select id="caseType">
+      <option value="">ধরন বেছে নিন</option>
+      <option value="LAND_DISPUTE">জমি সংক্রান্ত বিরোধ</option>
+      <option value="CRIMINAL">ফৌজদারি</option>
+      <option value="CIVIL">দেওয়ানি</option>
+      <option value="FRAUD">জালিয়াতি</option>
+      <option value="OTHER">অন্যান্য</option>
+    </select>
+
+    <label for="caseNumber">মামলার নম্বর</label>
+        <input id="caseNumber" maxlength="100" placeholder="যেমন CASE-2026/501">
+
+    <label for="court">আদালত বা থানার নাম</label>
+        <select id="court">
+      <option value="">আদালত বা থানা বেছে নিন</option>
+      <optgroup label="থানা">
+        <option>সাভার মডেল থানা</option>
+        <option>আশুলিয়া থানা</option>
+        <option>ধামরাই থানা</option>
+        <option>গাজীপুর সদর থানা</option>
+        <option>টঙ্গী থানা</option>
+        <option>কালিয়াকৈর থানা</option>
+        <option>সোনারগাঁও থানা</option>
+        <option>নারায়ণগঞ্জ সদর থানা</option>
+        <option>মির্জাপুর থানা</option>
+        <option>টাঙ্গাইল সদর থানা</option>
+        <option>সিংগাইর থানা</option>
+        <option>মানিকগঞ্জ সদর থানা</option>
+        <option>পলাশ থানা</option>
+        <option>নরসিংদী সদর থানা</option>
+      </optgroup>
+      <optgroup label="আদালত">
+        <option>ঢাকা জেলা ও দায়রা জজ আদালত</option>
+        <option>গাজীপুর জেলা ও দায়রা জজ আদালত</option>
+        <option>নারায়ণগঞ্জ জেলা ও দায়রা জজ আদালত</option>
+        <option>টাঙ্গাইল জেলা ও দায়রা জজ আদালত</option>
+        <option>মানিকগঞ্জ জেলা ও দায়রা জজ আদালত</option>
+        <option>নরসিংদী জেলা ও দায়রা জজ আদালত</option>
+      </optgroup>
+    </select>
+
+    <label for="caseDate">মামলার তারিখ</label>
+    <input id="caseDate" type="date">
+
+    <label for="details">বিবরণ (১০ থেকে ১৫০০ অক্ষর)</label>
+    <textarea id="details" maxlength="1500"></textarea>
+
+    <button id="submitBtn">জমা দিন</button>
+  </div>
+
+  <div class="box" id="listBox">
+    <h2>আমার জমা দেওয়া মামলা</h2>
+    <div id="mine">লোড হচ্ছে...</div>
+  </div>
+  <div class="box" id="closeListBox">
+    <h2>মামলা নিষ্পত্তির আবেদন</h2>
+    <p class="hint">আপনার নিজের জমা দেওয়া চলমান মামলা:</p>
+    <div id="myOpen">লোড হচ্ছে...</div>
+    <p class="hint" style="margin-top:14px">অন্য অফিসারের জমা দেওয়া মামলা নিষ্পত্তি করতে চাইলে (যেমন বদলি বা ছুটির কারণে):</p>
+    <button id="otherBtn" type="button" style="margin-top:6px">অন্য মামলার নিষ্পত্তির আবেদন</button>
+  </div>
+
+  <div class="box" id="closeFormBox" style="display:none">
+    <h2>নিষ্পত্তির আবেদন ফর্ম</h2>
+    <p class="hint" id="closeTarget"></p>
+    <div id="otherFields">
+      <label for="cMouza">১. মৌজা</label>
+      <select id="cMouza"></select>
+      <label for="cSurvey">২. জরিপের ধরন</label>
+      <select id="cSurvey">
+        <option value="">জরিপ বেছে নিন</option>
+        <option value="CS">CS</option><option value="SA">SA</option>
+        <option value="RS">RS</option><option value="BS">BS</option>
+      </select>
+      <label for="cDag">৩. দাগ নম্বর</label>
+      <input id="cDag" placeholder="যেমন D-101">
+      <label for="cKhatian">৪. খতিয়ান নম্বর</label>
+      <input id="cKhatian" placeholder="যেমন K-201">
+      <label for="cCaseNo">মামলার নম্বর (যে মামলা নিষ্পত্তি হয়েছে)</label>
+      <input id="cCaseNo" maxlength="100" placeholder="যেমন CASE-2026/501">
+    </div>
+    <label for="cType">নিষ্পত্তির ধরন</label>
+    <select id="cType">
+      <option value="">ধরন বেছে নিন</option>
+      <option value="JUDGMENT">রায় হয়েছে</option>
+      <option value="DISMISSED">মামলা খারিজ</option>
+      <option value="SETTLED">আপস হয়েছে</option>
+      <option value="WITHDRAWN">প্রত্যাহার</option>
+      <option value="OTHER">অন্য</option>
+    </select>
+    <label for="cDate">নিষ্পত্তির তারিখ</label>
+    <input id="cDate" type="date">
+    <label for="cOrder">আদেশ বা রায়ের নম্বর</label>
+    <input id="cOrder" maxlength="100">
+    <label for="cDetails">বিবরণ (না দিলেও চলবে)</label>
+    <textarea id="cDetails" maxlength="1000"></textarea>
+    <button id="closeSubmit" type="button">আবেদন জমা দিন</button>
+    <button id="closeCancel" type="button" style="background:#778">বাতিল</button>
+  </div>
+
+  <div class="box" id="closeMineBox">
+    <h2>আমার নিষ্পত্তির আবেদন</h2>
+    <div id="myClosures">লোড হচ্ছে...</div>
+  </div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const token = sessionStorage.getItem('token');
+const user = JSON.parse(sessionStorage.getItem('user') || 'null');
+const statusNames = { PENDING: 'যাচাইয়ের অপেক্ষায়', APPROVED: 'অনুমোদিত', REJECTED: 'বাতিল' };
+const errorNames = {
+  'Land not found': 'এই চারটা তথ্য দিয়ে কোনো জমি পাওয়া যায়নি। মৌজা, জরিপ, দাগ ও খতিয়ান নম্বর মিলিয়ে দেখুন।',
+  'This case is already submitted': 'এই জমিতে এই মামলার নম্বর আগেই জমা দেওয়া হয়েছে।',
+  'Case type is not valid': 'মামলার ধরন বেছে নিন।',
+  'Case number is required': 'মামলার নম্বর দিন।',
+  'Court name is required': 'আদালত বা থানার নাম দিন।',
+  'Details must be 10 to 1500 characters': 'বিবরণ ১০ থেকে ১৫০০ অক্ষরের মধ্যে হতে হবে।',
+  'Case date is not valid': 'মামলার তারিখ ঠিক নেই (ভবিষ্যতের তারিখ হবে না)।',
+  'Land details are required': 'জমির চারটা তথ্যই দিতে হবে।',
+  'Invalid or expired token': 'লগইনের মেয়াদ শেষ। আবার লগইন করুন।',
+  'Closure type is not valid': 'নিষ্পত্তির ধরন বেছে নিন।',
+  'Order number is required': 'আদেশ বা রায়ের নম্বর দিন।',
+  'Closure date is not valid': 'নিষ্পত্তির তারিখ ঠিক নেই (ভবিষ্যতের তারিখ হবে না)।',
+  'Closure date is before case date': 'নিষ্পত্তির তারিখ মামলার তারিখের আগে হতে পারে না।',
+  'Active case not found': 'এই জমিতে এই নম্বরের কোনো চলমান মামলা পাওয়া যায়নি। জমির তথ্য ও মামলার নম্বর মিলিয়ে দেখুন।',
+  'Closure already requested': 'এই মামলার নিষ্পত্তির আবেদন আগেই জমা আছে, অ্যাডমিনের সিদ্ধান্তের অপেক্ষায়।',
+  'Case number is required': 'মামলার নম্বর দিন।',
+  'Not allowed': 'এই কাজের অনুমতি শুধু অফিসারদের আছে।'
+};
+
+function showMessage(text, isError) {
+  const m = $('message');
+  m.textContent = '';
+  if (!text) return;
+  const d = document.createElement('div');
+  d.className = 'msg ' + (isError ? 'err' : 'ok');
+  d.textContent = text;
+  m.appendChild(d);
+}
+
+function addRow(parent, label, value) {
+  const row = document.createElement('div');
+  row.className = 'row';
+  const a = document.createElement('span'); a.textContent = label;
+  const b = document.createElement('span'); b.textContent = value || '-';
+  row.append(a, b);
+  parent.appendChild(row);
+}
+
+async function loadMouzas() {
+  const sel = $('mouza');
+  try {
+    const res = await fetch('/api/mouzas');
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    sel.textContent = '';
+    const first = document.createElement('option');
+    first.value = ''; first.textContent = 'মৌজা বেছে নিন';
+    sel.appendChild(first);
+    data.mouzas.forEach(m => {
+      const o = document.createElement('option');
+      o.value = m.mouza_id;
+      o.textContent = m.mouza_name + ' (' + m.upazila + ', ' + m.district + ' | জেএল ' + m.jl_number + ')';
+      sel.appendChild(o);
+    });
+  } catch (e) {
+    sel.textContent = '';
+    const o = document.createElement('option');
+    o.value = ''; o.textContent = 'মৌজার তালিকা আনা যায়নি';
+    sel.appendChild(o);
+  }
+}
+
+async function loadMine() {
+  const box = $('mine');
+  try {
+    const res = await fetch('/api/officer/my-submissions', { headers: { Authorization: 'Bearer ' + token } });
+    const data = await res.json();
+    if (!data.ok) { box.textContent = 'তালিকা আনা যায়নি।'; return; }
+    box.textContent = '';
+    if (data.submissions.length === 0) { box.textContent = 'এখনো কোনো মামলা জমা দেননি।'; return; }
+    data.submissions.forEach(s => {
+      const card = document.createElement('div');
+      card.style.cssText = 'border:1px solid #dfe9e2;border-radius:8px;padding:10px;margin-bottom:10px;';
+      addRow(card, 'মামলার নম্বর', s.reference_number);
+      addRow(card, 'জমি', s.mouza_name + ' | ' + s.survey_type + ' | ' + s.dag_number);
+      addRow(card, 'তারিখ', String(s.record_date).slice(0, 10));
+      addRow(card, 'অবস্থা', statusNames[s.review_status] || s.review_status);
+      box.appendChild(card);
+    });
+  } catch (e) {
+    box.textContent = 'সার্ভারের সাথে যোগাযোগ করা যায়নি।';
+  }
+}
+
+$('submitBtn').addEventListener('click', async () => {
+  const body = {
+    mouza_id: $('mouza').value,
+    survey_type: $('survey').value,
+    dag: $('dag').value.trim(),
+    khatian: $('khatian').value.trim(),
+    case_type: $('caseType').value,
+    case_number: $('caseNumber').value.trim(),
+    court: $('court').value.trim(),
+    case_date: $('caseDate').value,
+    details: $('details').value.trim()
+  };
+  if (!body.mouza_id || !body.survey_type || !body.dag || !body.khatian) {
+    return showMessage('জমির চারটা তথ্যই দিন।', true);
+  }
+  if (!body.case_type || !body.case_number || !body.court || !body.case_date || !body.details) {
+    return showMessage('মামলার সব ঘর পূরণ করুন।', true);
+  }
+  try {
+    const res = await fetch('/api/officer/submit-case', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!data.ok) return showMessage(errorNames[data.error] || ('জমা হয়নি: ' + data.error), true);
+    showMessage('মামলা জমা হয়েছে। অ্যাডমিন যাচাই করার পর এটা জমির তথ্যে দেখা যাবে।', false);
+    ['dag', 'khatian', 'caseNumber', 'court', 'caseDate', 'details'].forEach(id => { $(id).value = ''; });
+    $('caseType').value = '';
+    loadMine();
+  } catch (e) {
+    showMessage('সার্ভারের সাথে যোগাযোগ করা যায়নি।', true);
+  }
+});
+
+const closureNames = { JUDGMENT: 'রায় হয়েছে', DISMISSED: 'মামলা খারিজ', SETTLED: 'আপস হয়েছে', WITHDRAWN: 'প্রত্যাহার', OTHER: 'অন্য' };
+let selectedRisk = 0;
+
+function openCloseForm(riskId, label) {
+  selectedRisk = riskId;
+  $('closeTarget').textContent = riskId ? ('মামলা: ' + label) : 'অন্য অফিসারের জমা দেওয়া মামলা। জমির তথ্য ও মামলার নম্বর দিন।';
+  $('otherFields').style.display = riskId ? 'none' : 'block';
+  $('closeFormBox').style.display = 'block';
+  $('closeFormBox').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function loadOpen() {
+  const box = $('myOpen');
+  try {
+    const res = await fetch('/api/officer/my-cases-to-close', { headers: { Authorization: 'Bearer ' + token } });
+    const data = await res.json();
+    if (!data.ok) { box.textContent = 'তালিকা আনা যায়নি।'; return; }
+    box.textContent = '';
+    if (data.cases.length === 0) { box.textContent = 'নিষ্পত্তির আবেদন করার মতো কোনো চলমান মামলা নেই।'; return; }
+    data.cases.forEach(c => {
+      const card = document.createElement('div');
+      card.style.cssText = 'border:1px solid #dfe9e2;border-radius:8px;padding:10px;margin-bottom:10px;';
+      addRow(card, 'মামলার নম্বর', c.reference_number);
+      addRow(card, 'জমি', c.mouza_name + ' | ' + c.survey_type + ' | ' + c.dag_number);
+      addRow(card, 'মামলার তারিখ', c.record_date);
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = 'নিষ্পত্তির আবেদন';
+      b.addEventListener('click', () => openCloseForm(c.risk_id, c.reference_number));
+      card.appendChild(b);
+      box.appendChild(card);
+    });
+  } catch (e) {
+    box.textContent = 'সার্ভারের সাথে যোগাযোগ করা যায়নি।';
+  }
+}
+
+async function loadClosures() {
+  const box = $('myClosures');
+  try {
+    const res = await fetch('/api/officer/my-closures', { headers: { Authorization: 'Bearer ' + token } });
+    const data = await res.json();
+    if (!data.ok) { box.textContent = 'তালিকা আনা যায়নি।'; return; }
+    box.textContent = '';
+    if (data.closures.length === 0) { box.textContent = 'এখনো কোনো নিষ্পত্তির আবেদন করেননি।'; return; }
+    data.closures.forEach(c => {
+      const card = document.createElement('div');
+      card.style.cssText = 'border:1px solid #dfe9e2;border-radius:8px;padding:10px;margin-bottom:10px;';
+      addRow(card, 'মামলার নম্বর', c.reference_number);
+      addRow(card, 'জমি', c.mouza_name + ' | ' + c.survey_type + ' | ' + c.dag_number);
+      addRow(card, 'নিষ্পত্তির ধরন', closureNames[c.closure_type] || c.closure_type);
+      addRow(card, 'নিষ্পত্তির তারিখ', c.closure_date);
+      addRow(card, 'অবস্থা', statusNames[c.review_status] || c.review_status);
+      box.appendChild(card);
+    });
+  } catch (e) {
+    box.textContent = 'সার্ভারের সাথে যোগাযোগ করা যায়নি।';
+  }
+}
+
+$('otherBtn').addEventListener('click', () => openCloseForm(0, ''));
+$('closeCancel').addEventListener('click', () => { $('closeFormBox').style.display = 'none'; });
+
+$('closeSubmit').addEventListener('click', async () => {
+  const body = {
+    closure_type: $('cType').value,
+    closure_date: $('cDate').value,
+    order_number: $('cOrder').value.trim(),
+    details: $('cDetails').value.trim()
+  };
+  if (selectedRisk) {
+    body.risk_id = selectedRisk;
+  } else {
+    body.mouza_id = $('cMouza').value;
+    body.survey_type = $('cSurvey').value;
+    body.dag = $('cDag').value.trim();
+    body.khatian = $('cKhatian').value.trim();
+    body.case_number = $('cCaseNo').value.trim();
+    if (!body.mouza_id || !body.survey_type || !body.dag || !body.khatian || !body.case_number) {
+      return showMessage('জমির চারটা তথ্য আর মামলার নম্বর দিন।', true);
+    }
+  }
+  if (!body.closure_type || !body.closure_date || !body.order_number) {
+    return showMessage('নিষ্পত্তির ধরন, তারিখ ও আদেশের নম্বর দিন।', true);
+  }
+  try {
+    const res = await fetch('/api/officer/submit-closure', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!data.ok) return showMessage(errorNames[data.error] || ('জমা হয়নি: ' + data.error), true);
+    showMessage('নিষ্পত্তির আবেদন জমা হয়েছে। অ্যাডমিন যাচাই করবেন। অনুমোদনের আগে মামলা চলমান থাকবে।', false);
+    ['cDag', 'cKhatian', 'cCaseNo', 'cOrder', 'cDate', 'cDetails'].forEach(id => { $(id).value = ''; });
+    $('cType').value = '';
+    $('closeFormBox').style.display = 'none';
+    loadOpen();
+    loadClosures();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (e) {
+    showMessage('সার্ভারের সাথে যোগাযোগ করা যায়নি।', true);
+  }
+});
+
+if (!token || !user || user.role !== 'OFFICER') {
+  ['closeListBox', 'closeFormBox', 'closeMineBox'].forEach(id => { $(id).style.display = 'none'; });
+  $('formBox').style.display = 'none';
+  $('listBox').style.display = 'none';
+  showMessage('এই পেজ দেখতে অফিসার হিসেবে লগইন করতে হবে।', true);
+} else {
+  $('caseDate').max = new Date().toISOString().slice(0, 10);
+  $('cDate').max = new Date().toISOString().slice(0, 10);
+  loadMouzas().then(() => {
+    Array.from($('mouza').children).forEach(o => $('cMouza').appendChild(o.cloneNode(true)));
+  });
+  loadMine();
+  loadOpen();
+  loadClosures();
+}
+</script>
+<script src="/i18n.js"></script>
+<script src="/site.js"></script>
+</body>
+</html>
